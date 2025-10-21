@@ -2,9 +2,16 @@ import random
 
 
 def generate_mathematics_question() -> str:
-    a = random.randint(1, 20)
-    b = random.randint(1, 20)
-    return f"{a} + {b}"
+    operators = ["+", "-"]
+    number_of_terms = random.randint(2, 5)
+    expression = str(random.randint(1, 100))
+
+    for _ in range(number_of_terms - 1):
+        op = random.choice(operators)
+        num = random.randint(1, 100)
+        expression += f" {op} {num}"
+
+    return expression
 
     
 def generate_roman_numerals_question() -> str:
@@ -23,10 +30,10 @@ def generate_roman_numerals_question() -> str:
 
     
 def generate_usable_addresses_question() -> str:
-    subnets = ["192.168.1.0/24", "10.0.0.0/16", "172.16.0.0/20"]
-    return random.choice(subnets)
+    prefix = random.randint(1, 32)
+    ip = ".".join(str(random.randint(0, 255)) for _ in range(4))
+    return f"{ip}/{prefix}"
 
     
 def generate_network_broadcast_question() -> str:
-    subnets = ["192.168.1.0/24", "10.0.0.0/16", "172.16.0.0/20"]
-    return random.choice(subnets)
+    return generate_usable_addresses_question()  # both functions have same functionality
