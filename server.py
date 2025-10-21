@@ -76,7 +76,6 @@ def handle_add_client(connection, joined_flag):
             message = json.loads(data.decode().strip())
             if message.get("message_type") == "HI":
                 username = message.get("username")
-                print(f'{username} joined with HI sent')
                 with players_threading_lock:
                     players.append({"connection": connection, "username": username, "score": 0})
                 joined_flag.set()  # Ensures thread is given enough time for adding player
@@ -121,7 +120,9 @@ def start_game(config):
 
         player_responses = collect_player_responses(short_question, config, time_limit)
         send_results(player_responses, short_question, question_type, config)
-        send_leaderboard(config)
+
+        if i < len(question_types) - 1:  # Don't send leaderboard on final question
+            send_leaderboard(config)
 
         time.sleep(config["question_interval_seconds"])
 
@@ -318,7 +319,7 @@ def send_finished(config):
             if i + 1 < len(sorted_players) and score != sorted_players[i + 1]["score"]:
                 rank += 1
 
-        final = f"{config['final_standings_heading']}\n{heading}\n" + "\n".join(state_lines)
+        final = f"{config['final_standings_heading']}\n" + "\n".join(state_lines) + f"\n{heading}"
 
         send_json_all_players({
             "message_type": "FINISHED",

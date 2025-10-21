@@ -74,7 +74,7 @@ def receive_loop(sock, config):
                 break
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
-                handle_message(sock, message, config)
+                threading.Thread(target=handle_message, args=(sock, message, config), daemon=True).start()
         except Exception:
             break
 
