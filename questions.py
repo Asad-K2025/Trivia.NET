@@ -30,7 +30,7 @@ def generate_roman_numerals_question() -> str:
 
     
 def generate_usable_addresses_question() -> str:
-    prefix = random.randint(1, 32)
+    prefix = random.randint(0, 32)
     ip = ".".join(str(random.randint(0, 255)) for _ in range(4))
     return f"{ip}/{prefix}"
 
