@@ -3,6 +3,8 @@ import sys
 import socket
 import threading
 from pathlib import Path
+import queue
+import time
 
 
 def main():
@@ -66,6 +68,26 @@ def send_json(sock, message):
     sock.sendall(json.dumps(message).encode("utf-8") + b"\n")
 
 
+def timed_input(time_limit):
+    queue_for_input = queue.Queue()
+
+    def read_input():
+        try:
+            user_input = input()
+            queue_for_input.put(user_input)
+        except:
+            queue_for_input.put("")  # fallback on error or interruption
+
+    input_thread = threading.Thread(target=read_input, daemon=True)
+    input_thread.start()
+
+    try:
+        user_input = queue_for_input.get(timeout=time_limit)
+        return user_input
+    except queue.Empty:  # If the player doesn't input something within the time_limit, catch that exception
+        return ""
+
+
 def receive_loop(sock, config):
     while True:
         try:
@@ -74,7 +96,7 @@ def receive_loop(sock, config):
                 break
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
-                threading.Thread(target=handle_message, args=(sock, message, config), daemon=True).start()
+                handle_message(sock, message, config)
         except Exception:
             break
 
@@ -93,7 +115,7 @@ def handle_message(sock, message, config):
 
         if mode == "you":
             try:
-                answer = input()
+                answer = timed_input(time_limit)
             except KeyboardInterrupt:
                 answer = ""
         elif mode == "auto":
