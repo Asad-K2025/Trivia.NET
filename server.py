@@ -172,15 +172,22 @@ def collect_player_responses(short_q, config, time_limit):
 def evaluate_answer(question_type, short_question, player_response):
     if question_type == "Mathematics":
         try:
-            parts = short_question.split("+")
-            if len(parts) == 2:
-                a = int(parts[0].strip())
-                b = int(parts[1].strip())
-                correct = str(a + b)
-            else:
-                correct = ""
+            question_tokens = short_question.split()
+            total = int(question_tokens[0])
+            i = 1
+            while i < len(question_tokens):
+                operation = question_tokens[i]
+                number = int(question_tokens[i + 1])
+                if operation == "+":
+                    total += number
+                elif operation == "-":
+                    total -= number
+                else:
+                    return "", False
+                i += 2
+            correct = str(total)
         except:
-            correct = ""
+            return "", False
 
     elif question_type == "Roman Numerals":
         try:

@@ -118,30 +118,50 @@ def handle_message(sock, message, config):
         print(message["final_standings"])
 
 
-def evaluate_answer(qtype, short_q):
-    if qtype == "Mathematics":
+def evaluate_answer(question_type, short_question):
+    if question_type == "Mathematics":
         try:
-            parts = short_q.split("+")
-            if len(parts) == 2:
-                a = int(parts[0].strip())
-                b = int(parts[1].strip())
-                correct = str(a + b)
-            else:
-                correct = ""
+            question_tokens = short_question.split()
+            total = int(question_tokens[0])
+            i = 1
+            while i < len(question_tokens):
+                operation = question_tokens[i]
+                number = int(question_tokens[i + 1])
+                if operation == "+":
+                    total += number
+                elif operation == "-":
+                    total -= number
+                else:
+                    return "", False
+                i += 2
+            correct = str(total)
+        except:
+            return "", False
+
+    elif question_type == "Roman Numerals":
+        try:
+            values = {
+                'I': 1, 'V': 5, 'X': 10, 'L': 50,
+                'C': 100, 'D': 500, 'M': 1000
+            }
+            total = 0
+            prev = 0
+            for char in reversed(short_question):
+                value = values.get(char, 0)
+                if value < prev:
+                    total -= value
+                else:
+                    total += value
+                    prev = value
+            correct = str(total)
         except:
             correct = ""
 
-    elif qtype == "Roman Numerals":
-        try:
-            correct = str(int(short_q.strip()))
-        except:
-            correct = ""
+    elif question_type == "Usable IP Addresses of a Subnet":
+        correct = solve_usable_addresses(short_question)
 
-    elif qtype == "Usable IP Addresses of a Subnet":
-        correct = solve_usable_addresses(short_q)
-
-    elif qtype == "Network and Broadcast Address of a Subnet":
-        correct = solve_network_broadcast(short_q)
+    elif question_type == "Network and Broadcast Address of a Subnet":
+        correct = solve_network_broadcast(short_question)
 
     else:
         correct = ""
