@@ -8,13 +8,16 @@ import threading
 from pathlib import Path
 import queue
 
+connected = False
 
 def main():
+    global connected
     config = load_config()
 
     while True:
         try:
-            users_command = input()
+            if not connected:
+                users_command = input()
         except KeyboardInterrupt:
             break
 
@@ -24,14 +27,18 @@ def main():
                 host, port = address.split(":")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((host, int(port)))
+                connected = True
+                users_command = ""
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
                 threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
             except Exception:
                 print("Connection failed")
         elif users_command == "DISCONNECT":
+            connected = False
             send_json(sock, {"message_type": "BYE"})
             sock.close()
         elif users_command == "EXIT":
+            connected = False
             try:
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
