@@ -1,3 +1,6 @@
+# Implementation with errors (1)
+
+
 import json
 import sys
 import socket
@@ -8,131 +11,32 @@ import queue
 
 def main():
     config = load_config()
-    question_queue = queue.Queue()
-    answer_queue = queue.Queue()
-    input_request_queue = queue.Queue()
-    connected = False
-
-    sock = None
-
-    def handle_questions():
-        while True:
-            question = question_queue.get()  # Blocking wait
-            if question is None:
-                break  # Exit signal
-
-            print(question["trivia_question"])
-            mode = config["client_mode"]
-            short_question = question["short_question"]
-            time_limit = question["time_limit"]
-
-            if mode == "you":
-                input_request_queue.put(("ask", time_limit))  # Ask main thread for input
-                try:
-                    answer = answer_queue.get(timeout=time_limit + 1)
-                    # print(f"Got answer successfully {answer}")
-                except queue.Empty:
-                    answer = ""
-            elif mode == "auto":
-                answer = evaluate_answer(question["question_type"], short_question)
-            elif mode == "ai":
-                answer = "test_ollama"
-            else:
-                answer = ""
-
-            # if handles special cases in middle of trivia
-            if answer == "DISCONNECT" and connected:
-                send_json(sock, {"message_type": "BYE"})
-                sock.close()
-                connected = False
-            elif answer == "EXIT":
-                if connected:
-                    try:
-                        send_json(sock, {"message_type": "BYE"})
-                        sock.close()
-                    except:
-                        pass
-                sys.exit(0)
-            else:  # no special case, treat it as a response to the question
-                send_json(sock, {"message_type": "ANSWER", "answer": answer})
-
-    def receive_loop(sock, config, question_queue):
-        buffer = ""
-        while True:
-            try:
-                data = sock.recv(4096)
-                if not data:
-                    break
-                buffer += data.decode("utf-8")
-
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    if not line.strip():
-                        continue
-                    try:
-                        message = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue  # Wait for more data
-
-                    if message["message_type"] == "QUESTION":
-                        question_queue.put(message)
-                    else:
-                        handle_message(sock, message, config)
-
-            except Exception as e:
-                print(f"Receive loop error: {e}")
-                break
-
-        question_queue.put(None)
 
     while True:
         try:
-            # Check if main thread was asked to get timed input by handler thread
-            if not input_request_queue.empty():
-                request = input_request_queue.get_nowait()
-
-                if isinstance(request, tuple) and request[0] == "ask":
-                    time_limit = request[1]
-                    answer = timed_input(time_limit)
-                    answer_queue.put(answer)  # skip user input this loop
-
-            if not connected:  # if player is in a trivia game, do not run as otherwise two inputs run at once
-                users_command = input()
+            users_command = input()
         except KeyboardInterrupt:
             break
 
-        if users_command.startswith("CONNECT") and not connected:
+        if users_command.startswith("CONNECT"):
             try:
                 _, address = users_command.split()
                 host, port = address.split(":")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((host, int(port)))
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
-                threading.Thread(
-                    target=receive_loop,
-                    args=(sock, config, question_queue),
-                    daemon=True
-                ).start()
-                threading.Thread(
-                    target=handle_questions,
-                    daemon=True
-                ).start()
-                connected = True
+                threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
             except Exception:
                 print("Connection failed")
-
-        elif users_command == "DISCONNECT" and connected:
+        elif users_command == "DISCONNECT":
             send_json(sock, {"message_type": "BYE"})
             sock.close()
-            connected = False
-
         elif users_command == "EXIT":
-            if connected:
-                try:
-                    send_json(sock, {"message_type": "BYE"})
-                    sock.close()
-                except:
-                    pass
+            try:
+                send_json(sock, {"message_type": "BYE"})
+                sock.close()
+            except:
+                pass
             sys.exit(0)
 
 
@@ -172,7 +76,6 @@ def timed_input(time_limit):
     def read_input():
         try:
             input_provided = input()
-            print("Input provided: ", input_provided)
             queue_for_input.put(input_provided)
         except:
             queue_for_input.put("")  # fallback on error or interruption
@@ -187,11 +90,47 @@ def timed_input(time_limit):
         return ""
 
 
+def receive_loop(sock, config):
+    while True:
+        try:
+            data = sock.recv(4096)
+            if not data:
+                break
+            for line in data.decode("utf-8").splitlines():
+                message = json.loads(line)
+                handle_message(sock, message, config)
+        except Exception:
+            break
+
+
 def handle_message(sock, message, config):
     message_type = message.get("message_type")
 
     if message_type == "READY":
         print(message["info"])
+
+    elif message_type == "QUESTION":
+        print(message["trivia_question"])
+        mode = config["client_mode"]
+        short_question = message["short_question"]
+        time_limit = message["time_limit"]
+
+        if mode == "you":
+            try:
+                answer = timed_input(time_limit)
+            except KeyboardInterrupt:
+                answer = ""
+        elif mode == "auto":
+            answer = evaluate_answer(message["question_type"], short_question)
+        elif mode == "ai":
+            """
+            from ollama import ask_ollama
+            answer = ask_ollama(config["ollama_config"], short_question)"""
+            answer = "test_ollama"
+        else:
+            answer = ""
+
+        send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
         print(message["feedback"])
