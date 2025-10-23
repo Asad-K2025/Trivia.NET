@@ -27,7 +27,7 @@ def main():
             time_limit = question["time_limit"]
 
             if mode == "you":
-                input_request_queue.put(("ask", time_limit))  # Ask main thread for input 
+                input_request_queue.put(("ask", time_limit))  # Ask main thread for input
                 try:
                     answer = answer_queue.get(timeout=time_limit + 1)
                     # print(f"Got answer successfully {answer}")
@@ -57,20 +57,32 @@ def main():
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     def receive_loop(sock, config, question_queue):
+        buffer = ""
         while True:
             try:
                 data = sock.recv(4096)
                 if not data:
                     break
-                for line in data.decode("utf-8").splitlines():
-                    message = json.loads(line)
+                buffer += data.decode("utf-8")
+
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
+                    try:
+                        message = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # Wait for more data
+
                     if message["message_type"] == "QUESTION":
                         question_queue.put(message)
                     else:
                         handle_message(sock, message, config)
-            except Exception:
+
+            except Exception as e:
+                print(f"Receive loop error: {e}")
                 break
-        # Signal question handler to stop
+
         question_queue.put(None)
 
     while True:
@@ -160,6 +172,7 @@ def timed_input(time_limit):
     def read_input():
         try:
             input_provided = input()
+            print("Input provided: ", input_provided)
             queue_for_input.put(input_provided)
         except:
             queue_for_input.put("")  # fallback on error or interruption
