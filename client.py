@@ -27,7 +27,7 @@ def main():
             time_limit = question["time_limit"]
 
             if mode == "you":
-                input_request_queue.put(("ask", time_limit))  # Ask main thread for input
+                input_request_queue.put(("ask", time_limit))  # Ask main thread for input 
                 try:
                     answer = answer_queue.get(timeout=time_limit + 1)
                     # print(f"Got answer successfully {answer}")
