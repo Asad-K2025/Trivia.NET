@@ -85,8 +85,11 @@ def handle_add_client(connection, joined_flag):
 
 
 def send_json(connection, message):
-    encoded = json.dumps(message).encode("utf-8") + b"\n"
-    connection.sendall(encoded)
+    try:
+        encoded = json.dumps(message).encode("utf-8") + b"\n"
+        connection.sendall(encoded)
+    except (BrokenPipeError, ConnectionResetError, OSError):
+        pass
 
 
 def send_json_all_players(message):

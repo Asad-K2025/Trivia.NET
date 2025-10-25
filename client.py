@@ -10,6 +10,7 @@ from pathlib import Path
 import queue
 
 connected = False
+should_exit = threading.Event()
 
 def main():
     global connected
@@ -38,7 +39,7 @@ def main():
             send_json(sock, {"message_type": "BYE"})
             sock.close()
             connected = False
-        elif users_command == "EXIT":
+        elif users_command == "EXIT" or should_exit.is_set():
             try:
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
@@ -137,21 +138,16 @@ def handle_message(sock, message, config):
         else:
             answer = ""
 
+        global connected
         # In case user types in these commands while in the trivia game
         if answer == "DISCONNECT":
-            global connected
             send_json(sock, {"message_type": "BYE"})
             sock.close()
             connected = False
         elif answer == "EXIT":
-            try:
-                send_json(sock, {"message_type": "BYE"})
-                sock.close()
-            except:
-                pass
-            sys.exit(0)
-
-        send_json(sock, {"message_type": "ANSWER", "answer": answer})
+            should_exit.set()
+        else:
+            send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
         print(message["feedback"])
@@ -161,6 +157,7 @@ def handle_message(sock, message, config):
 
     elif message_type == "FINISHED":
         print(message["final_standings"])
+        connected = False
 
 
 def evaluate_answer(question_type, short_question):
