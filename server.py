@@ -146,7 +146,7 @@ def generate_short_question(qtype):
         return
 
 
-def collect_player_responses(short_q, config, time_limit):
+def collect_player_responses(short_q, config, time_limit):  # handle no response form client for timeout
     answers = {}
     deadline = time.time() + time_limit
 

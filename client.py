@@ -9,16 +9,15 @@ import time
 from pathlib import Path
 import queue
 
-connected = False
+connected = threading.Event()
 should_exit = threading.Event()
 
 def main():
-    global connected
     config = load_config()
 
     while True:
         try:
-            if not connected:
+            if not connected.is_set():
                 users_command = input()
         except KeyboardInterrupt:
             break
@@ -31,14 +30,14 @@ def main():
                 sock.connect((host, int(port)))
                 users_command = ""
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
-                connected = True
+                connected.set()
                 threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
             except Exception:
                 print("Connection failed")
         elif users_command == "DISCONNECT":
             send_json(sock, {"message_type": "BYE"})
             sock.close()
-            connected = False
+            connected.clear()
         elif users_command == "EXIT" or should_exit.is_set():
             try:
                 send_json(sock, {"message_type": "BYE"})
@@ -83,10 +82,10 @@ def timed_input(time_limit):
 
     def read_input():
         try:
-            input_provided = input()
+            input_provided = input("")
             queue_for_input.put(input_provided)
         except:
-            queue_for_input.put("")  # fallback on error or interruption
+            queue_for_input.put()  # fallback on error or interruption
 
     input_thread = threading.Thread(target=read_input, daemon=True)
     input_thread.start()
@@ -95,7 +94,7 @@ def timed_input(time_limit):
         user_input = queue_for_input.get(timeout=time_limit)
         return user_input
     except queue.Empty:  # If the player doesn't input something within the time_limit, catch that exception
-        return ""
+        return None
 
 
 def receive_loop(sock, config):
@@ -112,6 +111,7 @@ def receive_loop(sock, config):
 
 
 def handle_message(sock, message, config):
+    global connected
     message_type = message.get("message_type")
 
     if message_type == "READY":
@@ -125,7 +125,7 @@ def handle_message(sock, message, config):
 
         if mode == "you":
             try:
-                answer = timed_input(time_limit)
+                answer = timed_input(time_limit)  # handle no user input, sodon;t sned mpty stirng, but nothing
             except KeyboardInterrupt:
                 answer = ""
         elif mode == "auto":
@@ -138,16 +138,16 @@ def handle_message(sock, message, config):
         else:
             answer = ""
 
-        global connected
         # In case user types in these commands while in the trivia game
         if answer == "DISCONNECT":
             send_json(sock, {"message_type": "BYE"})
             sock.close()
-            connected = False
+            connected.clear()
         elif answer == "EXIT":
             should_exit.set()
         else:
-            send_json(sock, {"message_type": "ANSWER", "answer": answer})
+            if answer is not None:  # make sure user didn't time out
+                send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
         print(message["feedback"])
@@ -157,7 +157,7 @@ def handle_message(sock, message, config):
 
     elif message_type == "FINISHED":
         print(message["final_standings"])
-        connected = False
+        connected.clear()
 
 
 def evaluate_answer(question_type, short_question):
