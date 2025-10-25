@@ -5,6 +5,7 @@ import json
 import sys
 import socket
 import threading
+import time
 from pathlib import Path
 import queue
 
@@ -27,18 +28,17 @@ def main():
                 host, port = address.split(":")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((host, int(port)))
-                connected = True
                 users_command = ""
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
+                connected = True
                 threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
             except Exception:
                 print("Connection failed")
         elif users_command == "DISCONNECT":
-            connected = False
             send_json(sock, {"message_type": "BYE"})
             sock.close()
-        elif users_command == "EXIT":
             connected = False
+        elif users_command == "EXIT":
             try:
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
@@ -136,6 +136,20 @@ def handle_message(sock, message, config):
             answer = "test_ollama"
         else:
             answer = ""
+
+        # In case user types in these commands while in the trivia game
+        if answer == "DISCONNECT":
+            global connected
+            send_json(sock, {"message_type": "BYE"})
+            sock.close()
+            connected = False
+        elif answer == "EXIT":
+            try:
+                send_json(sock, {"message_type": "BYE"})
+                sock.close()
+            except:
+                pass
+            sys.exit(0)
 
         send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
