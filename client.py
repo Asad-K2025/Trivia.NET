@@ -1,6 +1,3 @@
-# Implementation with errors (1)
-
-
 import json
 import sys
 import socket
@@ -11,6 +8,10 @@ import queue
 
 connected = threading.Event()
 should_exit = threading.Event()
+
+active_input_thread = None
+temp_input = "999"
+current_question_id = 0
 
 def main():
     config = load_config()
@@ -77,23 +78,37 @@ def send_json(sock, message):
     sock.sendall(json.dumps(message).encode("utf-8") + b"\n")
 
 
-def timed_input(time_limit):
+def timed_input(time_limit, question_id):
+    global active_input_thread
+    global temp_input
+    global current_question_id
     queue_for_input = queue.Queue()
 
     def read_input():
+        global temp_input
+
         try:
-            input_provided = input("")
-            queue_for_input.put(input_provided)
+            if question_id == current_question_id:  # only ask for input if previous question answered
+                input_provided = input()
+                temp_input = input_provided
+                queue_for_input.put(input_provided)
+            else:
+                queue_for_input.put(temp_input)
         except:
-            queue_for_input.put()  # fallback on error or interruption
+            queue_for_input.put("")  # fallback on error or interruption
 
     input_thread = threading.Thread(target=read_input, daemon=True)
+    active_input_thread = input_thread
     input_thread.start()
 
     try:
         user_input = queue_for_input.get(timeout=time_limit)
         return user_input
     except queue.Empty:  # If the player doesn't input something within the time_limit, catch that exception
+        if temp_input != "999":
+            returning_val = temp_input
+            temp_input = "999"
+            return returning_val
         return None
 
 
@@ -112,12 +127,14 @@ def receive_loop(sock, config):
 
 def handle_message(sock, message, config):
     global connected
+    global current_question_id
     message_type = message.get("message_type")
 
     if message_type == "READY":
         print(message["info"])
 
     elif message_type == "QUESTION":
+        current_question_id += 1
         print(message["trivia_question"])
         mode = config["client_mode"]
         short_question = message["short_question"]
@@ -125,8 +142,9 @@ def handle_message(sock, message, config):
 
         if mode == "you":
             try:
-                answer = timed_input(time_limit)  # handle no user input, sodon;t sned mpty stirng, but nothing
+                answer = timed_input(time_limit, current_question_id)
             except KeyboardInterrupt:
+                print("Exception in handle message")
                 answer = ""
         elif mode == "auto":
             answer = evaluate_answer(message["question_type"], short_question)
@@ -146,7 +164,7 @@ def handle_message(sock, message, config):
         elif answer == "EXIT":
             should_exit.set()
         else:
-            if answer is not None:  # make sure user didn't time out
+            if answer is not None:  # make sure user didn't time out, if they did, don't send anything
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
