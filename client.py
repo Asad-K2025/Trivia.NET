@@ -5,9 +5,13 @@ import threading
 import time
 from pathlib import Path
 import queue
+import signal
 
 connected = threading.Event()
 should_exit = threading.Event()
+
+question_queue = queue.Queue()
+
 
 def main():
     config = load_config()
@@ -41,7 +45,17 @@ def main():
                 sock.close()
             except:
                 pass
-            sys.exit(0)
+            for i in range(10):
+                sys.exit(0)
+        else:
+            try:
+                message = question_queue.get(timeout=1)
+                if message["message_type"] == "QUESTION":
+                    answer = input_handler_with_timeouts(message["time_limit"])
+                    if answer is not None:
+                        send_json(sock, {"message_type": "ANSWER", "answer": answer})
+            except queue.Empty:
+                pass
 
 
 def load_config():
@@ -70,6 +84,23 @@ def load_config():
     return config_file
 
 
+def input_handler_with_timeouts(time_limit):
+    def timeout_handler(signum, frame):
+        raise TimeoutError
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(time_limit)
+
+    try:
+        user_input = input()
+        signal.alarm(0)  # Cancel timeout
+        return user_input
+    except TimeoutError:
+        return None
+    finally:
+        signal.alarm(0)
+
+
 def send_json(sock, message):
     sock.sendall(json.dumps(message).encode("utf-8") + b"\n")
 
@@ -82,13 +113,18 @@ def timed_input(time_limit):
             input_provided = input("")
             queue_for_input.put(input_provided)
         except:
-            queue_for_input.put()  # fallback on error or interruption
+            queue_for_input.put(None)  # fallback on error or interruption
 
     input_thread = threading.Thread(target=read_input, daemon=True)
     input_thread.start()
 
     try:
         user_input = queue_for_input.get(timeout=time_limit)
+        if user_input == "EXIT":
+            should_exit.set()
+            print("Test: in thread exit")
+            for i in range(10):
+                sys.exit(0)
         return user_input
     except queue.Empty:  # If the player doesn't input something within the time_limit, catch that exception
         return None
@@ -102,7 +138,14 @@ def receive_loop(sock, config):
                 break
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
-                handle_message(sock, message, config)
+
+                # Handle input outside thread to manage blocked input calls
+                if message["message_type"] == "QUESTION" and config["client_mode"] == "you":
+                    question_queue.put(message)
+                    print(message["trivia_question"])
+                else:
+                    # Handle other messages in thread
+                    threading.Thread(target=handle_message, args=(sock, message, config), daemon=True).start()
         except Exception:
             break
 
@@ -142,6 +185,9 @@ def handle_message(sock, message, config):
             connected.clear()
         elif answer == "EXIT":
             should_exit.set()
+            print("Test: in thread exit")
+            for i in range(10):
+                sys.exit(0)
         else:
             if answer is not None:  # make sure user didn't time out
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
