@@ -122,7 +122,7 @@ def handle_message(sock, message, config):
 
         if mode == "you":
             try:
-                answer = timed_input(time_limit) 
+                answer = timed_input(time_limit)
             except KeyboardInterrupt:
                 answer = ""
         elif mode == "auto":

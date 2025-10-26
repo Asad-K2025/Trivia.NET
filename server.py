@@ -270,7 +270,7 @@ def send_results(player_responses, short_question, question_type, config):
         username = player["username"]
         conn = player["connection"]
         player_response = player_responses.get(username)
-        if player_response is None:  # player didn't answer, so don't send a message
+        if player_response is None:  # player didn't answer so don't send a message
             continue
         correct_answer, is_correct = evaluate_answer(question_type, short_question, player_response)
 
