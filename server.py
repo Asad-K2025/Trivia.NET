@@ -33,7 +33,7 @@ def main():
             join_flag = threading.Event()  # Informs when client handling is complete in thread
             threading.Thread(target=handle_add_client, args=(connection, join_flag), daemon=True).start()
 
-            if not join_flag.wait(timeout=10):
+            if not join_flag.wait(timeout=3):
                 continue  # Client didn't join in time
 
             with players_threading_lock:  # Ensures threads enter block one at a time
