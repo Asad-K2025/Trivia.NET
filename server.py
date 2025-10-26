@@ -265,7 +265,6 @@ def solve_network_broadcast(short_q: str) -> str:
 
 
 def send_results(player_responses, short_question, question_type, config):
-    print(player_responses)
     for player in players:
         username = player["username"]
         conn = player["connection"]
