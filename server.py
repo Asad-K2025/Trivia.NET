@@ -17,7 +17,7 @@ def main():
     config = load_config()
     port = config["port"]
     max_players = config["players"]
-
+    
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
             sock.bind(("0.0.0.0", port))

@@ -49,7 +49,7 @@ def main():
                 sys.exit(0)
         else:
             try:
-                message = question_queue.get(timeout=1)
+                message = question_queue.get()
                 if message["message_type"] == "QUESTION":
                     answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
@@ -89,16 +89,16 @@ def input_handler_with_timeouts(time_limit):
         raise TimeoutError
 
     signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(time_limit)
+    signal.setitimer(signal.ITIMER_REAL, time_limit)
 
     try:
         user_input = input()
-        signal.alarm(0)  # Cancel timeout
+        signal.setitimer(signal.ITIMER_REAL, 0)  # Cancel timeout
         return user_input
     except TimeoutError:
         return None
     finally:
-        signal.alarm(0)
+        signal.setitimer(signal.ITIMER_REAL, 0)
 
 
 def send_json(sock, message):
