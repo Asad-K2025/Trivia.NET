@@ -26,7 +26,6 @@ def main():
             sys.exit(1)
 
         sock.listen()
-        print(f"Server listening on port {port}...")
         all_players_connected = False
 
         while True:
@@ -42,7 +41,15 @@ def main():
                     all_players_connected = True
 
             if all_players_connected:
-                break
+                with players_threading_lock:
+                    for player in players:
+                        try:
+                            player["connection"].send(b"")  # Check if player is still connected
+                        except Exception:
+                            players.remove(player)
+                    if len(players) >= max_players:
+                        break
+
         print("All players connected. Ready to start the game!")
         start_game(config)
 
