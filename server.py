@@ -44,7 +44,7 @@ def main():
                 with players_threading_lock:
                     for player in players:
                         try:
-                            player["connection"].send(b"")  # Check if player is still connected
+                            player["connection"].send(b"")  # Check if player is currently connected
                         except Exception:
                             players.remove(player)
                     if len(players) >= max_players:
