@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 import queue
 import signal
+import requests
 
 connected = threading.Event()
 should_exit = threading.Event()
