@@ -337,12 +337,21 @@ def send_finished(config):
 
         state_lines = []
         rank = 1
+        prev_score = None
+        same_score_count = 0
+
         for i, player in enumerate(sorted_players):
             score = player["score"]
             noun = config["points_noun_singular"] if score == 1 else config["points_noun_plural"]
+
+            if prev_score is not None and score != prev_score:
+                rank += same_score_count
+                same_score_count = 0
+
+            same_score_count += 1
+            prev_score = score
+
             state_lines.append(f"{rank}. {player['username']}: {score} {noun}")
-            if i + 1 < len(sorted_players) and score != sorted_players[i + 1]["score"]:
-                rank += 1
 
         final = f"{config['final_standings_heading']}\n" + "\n".join(state_lines) + f"\n{heading}"
 
