@@ -18,6 +18,7 @@ question_queue = queue.Queue()
 def main():
     config = load_config()
     sock = None
+    users_command = ""
 
     while True:
         try:
