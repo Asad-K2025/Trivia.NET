@@ -10,7 +10,7 @@ import requests
 
 connected = threading.Event()
 should_exit = threading.Event()
-leaderboard_message_received = threading.Event()
+result_message_received = threading.Event()
 
 question_queue = queue.Queue()
 
@@ -62,7 +62,7 @@ def main():
                         answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
-                            leaderboard_message_received.wait(timeout=message["time_limit"])  # wait for leaderboard
+                            result_message_received.wait(timeout=message["time_limit"])  # wait for leaderboard
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
                             sys.exit(0)
@@ -179,12 +179,12 @@ def handle_message(sock, message, config):
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
+        result_message_received.set()
         print(message["feedback"])
+        result_message_received.clear()  # clear for next question in case quiz does not exit
 
     elif message_type == "LEADERBOARD":
-        leaderboard_message_received.set()
         print(message["state"])
-        leaderboard_message_received.clear()  # clear for next question in case quiz does not exit
 
     elif message_type == "FINISHED":
         print(message["final_standings"])
