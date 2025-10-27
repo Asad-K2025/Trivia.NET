@@ -64,7 +64,7 @@ def main():
                     if answer is not None:
                         if answer == "EXIT":
                             pending_exit_in_main = True
-                            ####print("pending exit in main set to true")
+                            #####print("pending exit in main set to true")
                         elif answer == "DISCONNECT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
@@ -184,7 +184,7 @@ def handle_message(sock, message, config):
         if pending_exit_in_main:
             send_json(sock, {"message_type": "BYE"})  # stop receiving server messages
             exit_flag_handle_message = True
-            ####print("sent bye flag and set exit_flag in handle message to true")
+            #####print("sent bye flag and set exit_flag in handle message to true")
 
     elif message_type == "LEADERBOARD":
         if pending_exit_in_main or exit_flag_handle_message:
