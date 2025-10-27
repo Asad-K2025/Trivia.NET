@@ -192,29 +192,38 @@ def handle_message(sock, message, config):
 
 
 def ask_ollama(ollama_config, short_question, time_limit):
-    host = ollama_config["ollama_host"]
-    port = ollama_config["ollama_port"]
-    model = ollama_config["ollama_model"]
+    def timeout_handler(signum, frame):
+        raise TimeoutError
 
-    url = f"http://{host}:{port}/api/chat"
-    headers = {"Content-Type": "application/json"}
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "user", "content": f'Evaluate {short_question}. No extra output'}
-        ],
-        "stream": False
-    }
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.setitimer(signal.ITIMER_REAL, time_limit)
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=time_limit)
+        host = ollama_config["ollama_host"]
+        port = ollama_config["ollama_port"]
+        model = ollama_config["ollama_model"]
+
+        url = f"http://{host}:{port}/api/chat"
+        headers = {"Content-Type": "application/json"}
+
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": f'Evaluate {short_question}. No extra output'}
+            ],
+            "stream": False
+        }
+
+        print("trying response")
+        response = requests.post(url, headers=headers, json=payload)
+        signal.setitimer(signal.ITIMER_REAL, 0)  # Cancel timeout
         response.raise_for_status()  # raise error if request failed
         data = response.json()
         return data["message"]["content"]
-    except requests.Timeout:
-        print("timeout")
+    except:
         return None
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
 
 
 def evaluate_answer(question_type, short_question):
