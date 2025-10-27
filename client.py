@@ -29,7 +29,7 @@ def main():
                 host, port = address.split(":")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((host, int(port)))
-                users_command = ""
+                users_command = ""  # reset to avoid a connect loop
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
                 connected.set()
                 threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
@@ -49,7 +49,7 @@ def main():
                 sys.exit(0)
         else:
             try:
-                message = question_queue.get()
+                message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
                     answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
@@ -105,33 +105,11 @@ def send_json(sock, message):
     sock.sendall(json.dumps(message).encode("utf-8") + b"\n")
 
 
-def timed_input(time_limit):
-    queue_for_input = queue.Queue()
-
-    def read_input():
-        try:
-            input_provided = input("")
-            queue_for_input.put(input_provided)
-        except:
-            queue_for_input.put(None)  # fallback on error or interruption
-
-    input_thread = threading.Thread(target=read_input, daemon=True)
-    input_thread.start()
-
-    try:
-        user_input = queue_for_input.get(timeout=time_limit)
-        if user_input == "EXIT":
-            should_exit.set()
-            print("Test: in thread exit")
-            for i in range(10):
-                sys.exit(0)
-        return user_input
-    except queue.Empty:  # If the player doesn't input something within the time_limit, catch that exception
-        return None
-
-
 def receive_loop(sock, config):
     while True:
+        if not connected.is_set():  # exit on disconnecting with client
+            break
+
         try:
             data = sock.recv(4096)
             if not data:
@@ -139,13 +117,8 @@ def receive_loop(sock, config):
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
 
-                # Handle input outside thread to manage blocked input calls
-                if message["message_type"] == "QUESTION" and config["client_mode"] == "you":
-                    question_queue.put(message)
-                    print(message["trivia_question"])
-                else:
-                    # Handle other messages in thread
-                    threading.Thread(target=handle_message, args=(sock, message, config), daemon=True).start()
+                # Handle other messages in thread
+                handle_message(sock, message, config)
         except Exception:
             break
 
@@ -164,10 +137,8 @@ def handle_message(sock, message, config):
         time_limit = message["time_limit"]
 
         if mode == "you":
-            try:
-                answer = timed_input(time_limit)
-            except KeyboardInterrupt:
-                answer = ""
+            question_queue.put(message)
+            answer = None
         elif mode == "auto":
             answer = evaluate_answer(message["question_type"], short_question)
         elif mode == "ai":
@@ -178,7 +149,6 @@ def handle_message(sock, message, config):
         else:
             answer = ""
 
-        # In case user types in these commands while in the trivia game
         if answer == "DISCONNECT":
             send_json(sock, {"message_type": "BYE"})
             sock.close()

@@ -17,8 +17,9 @@ def main():
     config = load_config()
     port = config["port"]
     max_players = config["players"]
-    
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # allow server reuse even after os time_wait
         try:
             sock.bind(("0.0.0.0", port))
         except Exception:
@@ -340,6 +341,8 @@ def send_finished(config):
 
         for player in players:
             player["connection"].close()
+
+        players.clear()
 
 
 if __name__ == "__main__":
