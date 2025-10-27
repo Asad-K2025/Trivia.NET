@@ -102,7 +102,7 @@ def load_config():
 
 
 def input_handler_with_timeouts(time_limit):
-    def timeout_handler(_, _2):
+    def timeout_handler(signum, frame):
         raise TimeoutError
 
     signal.signal(signal.SIGALRM, timeout_handler)
@@ -181,7 +181,7 @@ def handle_message(sock, message, config):
 
 
 def ask_ollama(ollama_config, short_question, time_limit):
-    def timeout_handler(_1, _2):
+    def timeout_handler(signum, frame):
         raise TimeoutError
 
     signal.signal(signal.SIGALRM, timeout_handler)
