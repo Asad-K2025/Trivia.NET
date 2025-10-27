@@ -57,16 +57,9 @@ def main():
                     answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
-                            try:
-                                _ = question_queue.get(timeout=0.1)
-                                send_json(sock, {"message_type": "ANSWER", "answer": answer})
-                                send_json(sock, {"message_type": "BYE"})
-                                sock.close()
-                                sys.exit(0)
-                            except:
-                                send_json(sock, {"message_type": "BYE"})
-                                sock.close()
-                                sys.exit(0)
+                            send_json(sock, {"message_type": "BYE"})
+                            sock.close()
+                            sys.exit(0)
                         elif answer == "DISCONNECT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
