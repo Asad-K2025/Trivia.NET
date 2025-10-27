@@ -138,7 +138,7 @@ def start_game(config):
         if i < len(question_types) - 1:  # Don't send leaderboard on final question
             send_leaderboard(config)
 
-        time.sleep(config["question_interval_seconds"]/4)  # wait before sending next question
+        time.sleep(config["question_interval_seconds"]/2)  # wait before sending next question
 
     send_finished(config)
 
