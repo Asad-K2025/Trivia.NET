@@ -42,6 +42,7 @@ def main():
                     all_players_connected = True
 
             if all_players_connected:
+                time.sleep(1)
                 with players_threading_lock:
                     for player in players:
                         try:
@@ -50,6 +51,8 @@ def main():
                             players.remove(player)
                     if len(players) >= max_players:
                         break
+                    else:
+                        all_players_connected = False
 
         print("All players connected. Ready to start the game!")
         start_game(config)
