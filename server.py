@@ -40,7 +40,7 @@ def main():
                     all_players_connected = True
 
             if all_players_connected:
-                time.sleep(3)  # wait a bit and check
+                time.sleep(1)  # wait a bit and check
                 with players_threading_lock:
                     for player in players:
                         try:
