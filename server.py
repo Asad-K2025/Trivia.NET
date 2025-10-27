@@ -299,13 +299,24 @@ def send_leaderboard(config):
     with players_threading_lock:
         sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))
         state_lines = []
+
         rank = 1
+        prev_score = None
+        same_score_count = 0
+
         for i, player in enumerate(sorted_players):
             score = player["score"]
             noun = config["points_noun_singular"] if score == 1 else config["points_noun_plural"]
+
+            # if new score different, increase num of tied plyaers
+            if prev_score is not None and score != prev_score:
+                rank += same_score_count
+                same_score_count = 0
+
+            same_score_count += 1
+            prev_score = score
+
             state_lines.append(f"{rank}. {player['username']}: {score} {noun}")
-            if i + 1 < len(sorted_players) and score != sorted_players[i + 1]["score"]:
-                rank += 1
 
         send_json_all_players({
             "message_type": "LEADERBOARD",
