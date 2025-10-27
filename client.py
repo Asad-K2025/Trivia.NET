@@ -162,6 +162,7 @@ def handle_message(sock, message, config):
             answer = evaluate_answer(message["question_type"], short_question)
         elif mode == "ai":
             question_queue.put(message)
+            answer = None
         else:
             answer = ""
 
