@@ -52,7 +52,7 @@ def main():
                 pass
             sys.exit(0)
         else:
-            try:
+            try:  # used if client answered a question
                 client_mode = config["client_mode"]
                 message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
@@ -166,18 +166,8 @@ def handle_message(sock, message, config):
         else:
             answer = ""
 
-        if answer == "DISCONNECT":
-            send_json(sock, {"message_type": "BYE"})
-            sock.close()
-            connected.clear()
-        elif answer == "EXIT":
-            should_exit.set()
-            print("Test: in thread exit")
-            for i in range(10):
-                sys.exit(0)
-        else:
-            if answer is not None:  # make sure user didn't time out
-                send_json(sock, {"message_type": "ANSWER", "answer": answer})
+        if answer is not None:  # make sure user didn't time out
+            send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
         result_message_received.set()
