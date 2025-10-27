@@ -12,6 +12,8 @@ connected = threading.Event()
 should_exit = threading.Event()
 
 question_queue = queue.Queue()
+pending_exit_in_main = False
+exit_flag_handle_message = False
 
 
 def main():
@@ -52,14 +54,17 @@ def main():
             sys.exit(0)
         else:
             try:
+                global pending_exit_in_main, exit_flag_handle_message
+                if exit_flag_handle_message:
+                    sock.close()
+                    sys.exit(0)
                 message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
                     answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
-                            send_json(sock, {"message_type": "BYE"})
-                            sock.close()
-                            sys.exit(0)
+                            pending_exit_in_main = True
+                            ####print("pending exit in main set to true")
                         elif answer == "DISCONNECT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
@@ -129,14 +134,13 @@ def receive_loop(sock, config):
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
 
-                # Handle other messages in thread
                 handle_message(sock, message, config)
         except Exception:
             break
 
 
 def handle_message(sock, message, config):
-    global connected
+    global connected, exit_flag_handle_message
     message_type = message.get("message_type")
 
     if message_type == "READY":
@@ -177,9 +181,16 @@ def handle_message(sock, message, config):
 
     elif message_type == "RESULT":
         print(message["feedback"])
+        if pending_exit_in_main:
+            send_json(sock, {"message_type": "BYE"})  # stop receiving server messages
+            exit_flag_handle_message = True
+            ####print("sent bye flag and set exit_flag in handle message to true")
 
     elif message_type == "LEADERBOARD":
-        print(message["state"])
+        if pending_exit_in_main or exit_flag_handle_message:
+            pass
+        else:
+            print(message["state"])
 
     elif message_type == "FINISHED":
         print(message["final_standings"])
