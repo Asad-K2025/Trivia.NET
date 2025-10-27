@@ -214,8 +214,7 @@ def ask_ollama(ollama_config, short_question, time_limit):
             "stream": False
         }
 
-        print("trying response")
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=time_limit)
         signal.setitimer(signal.ITIMER_REAL, 0)  # Cancel timeout
         response.raise_for_status()  # raise error if request failed
         data = response.json()
