@@ -10,10 +10,9 @@ import requests
 
 connected = threading.Event()
 should_exit = threading.Event()
+result_message_received = threading.Event()
 
 question_queue = queue.Queue()
-pending_exit_in_main = False
-exit_flag_handle_message = False
 
 
 def main():
@@ -54,17 +53,18 @@ def main():
             sys.exit(0)
         else:
             try:
-                global pending_exit_in_main, exit_flag_handle_message
-                if exit_flag_handle_message:
-                    sock.close()
-                    sys.exit(0)
+                client_mode = config["client_mode"]
                 message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
-                    answer = input_handler_with_timeouts(message["time_limit"])
+                    if client_mode == "ai":
+                        answer = ask_ollama(config["ollama_config"], message["short_question"])
+                    else:
+                        answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
-                            pending_exit_in_main = True
-                            #####print("pending exit in main set to true")
+                            send_json(sock, {"message_type": "BYE"})
+                            sock.close()
+                            sys.exit(0)
                         elif answer == "DISCONNECT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
@@ -134,13 +134,14 @@ def receive_loop(sock, config):
             for line in data.decode("utf-8").splitlines():
                 message = json.loads(line)
 
+                # Handle other messages in thread
                 handle_message(sock, message, config)
         except Exception:
             break
 
 
 def handle_message(sock, message, config):
-    global connected, exit_flag_handle_message
+    global connected
     message_type = message.get("message_type")
 
     if message_type == "READY":
@@ -159,10 +160,7 @@ def handle_message(sock, message, config):
             question_queue.put(message)
             answer = evaluate_answer(message["question_type"], short_question)
         elif mode == "ai":
-            """
-            from ollama import ask_ollama
-            answer = ask_ollama(config["ollama_config"], short_question)"""
-            answer = "test_ollama"
+            question_queue.put(message)
         else:
             answer = ""
 
@@ -180,21 +178,40 @@ def handle_message(sock, message, config):
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
+        result_message_received.set()
         print(message["feedback"])
-        if pending_exit_in_main:
-            send_json(sock, {"message_type": "BYE"})  # stop receiving server messages
-            exit_flag_handle_message = True
-            #####print("sent bye flag and set exit_flag in handle message to true")
 
     elif message_type == "LEADERBOARD":
-        if pending_exit_in_main or exit_flag_handle_message:
-            pass
-        else:
-            print(message["state"])
+        print(message["state"])
 
     elif message_type == "FINISHED":
         print(message["final_standings"])
         connected.clear()
+
+
+def ask_ollama(ollama_config, short_question):
+    host = ollama_config["ollama_host"]
+    port = ollama_config["ollama_port"]
+    model = ollama_config["ollama_model"]
+
+    url = f"http://{host}:{port}/api/chat"
+    headers = {"Content-Type": "application/json"}
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": f'Evaluate {short_question}. No extra output'}
+        ],
+        "stream": False
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    print(response)
+    response.raise_for_status()  # raise error if request failed
+
+    data = response.json()
+
+    return data["message"]["content"]
 
 
 def evaluate_answer(question_type, short_question):
