@@ -57,7 +57,7 @@ def main():
                 message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
                     if client_mode == "ai":
-                        answer = ask_ollama(config["ollama_config"], message["short_question"])
+                        answer = ask_ollama(config["ollama_config"], message["short_question"], message["time_limit"])
                     else:
                         answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
@@ -189,7 +189,7 @@ def handle_message(sock, message, config):
         connected.clear()
 
 
-def ask_ollama(ollama_config, short_question):
+def ask_ollama(ollama_config, short_question, time_limit):
     host = ollama_config["ollama_host"]
     port = ollama_config["ollama_port"]
     model = ollama_config["ollama_model"]
@@ -205,13 +205,14 @@ def ask_ollama(ollama_config, short_question):
         "stream": False
     }
 
-    response = requests.post(url, headers=headers, json=payload)
-    print(response)
-    response.raise_for_status()  # raise error if request failed
-
-    data = response.json()
-
-    return data["message"]["content"]
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=time_limit)
+        response.raise_for_status()  # raise error if request failed
+        data = response.json()
+        return data["message"]["content"]
+    except requests.Timeout:
+        print("timeout")
+        return None
 
 
 def evaluate_answer(question_type, short_question):
