@@ -15,6 +15,7 @@ question_queue = queue.Queue()
 
 def main():
     config = load_config()
+    sock = None
 
     while True:
         try:
@@ -36,8 +37,10 @@ def main():
             except Exception:
                 print("Connection failed")
         elif users_command == "DISCONNECT":
-            send_json(sock, {"message_type": "BYE"})
-            sock.close()
+            if sock is not None:
+                send_json(sock, {"message_type": "BYE"})
+                sock.close()
+            sock = None
             connected.clear()
         elif users_command == "EXIT" or should_exit.is_set():
             try:
@@ -45,8 +48,7 @@ def main():
                 sock.close()
             except:
                 pass
-            for i in range(10):
-                sys.exit(0)
+            sys.exit(0)
         else:
             try:
                 message = question_queue.get(timeout=0.1)
