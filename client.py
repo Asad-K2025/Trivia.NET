@@ -53,7 +53,14 @@ def main():
                 if message["message_type"] == "QUESTION":
                     answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
-                        send_json(sock, {"message_type": "ANSWER", "answer": answer})
+                        if answer == "EXIT":
+                            sys.exit(0)
+                        elif answer == "DISCONNECT":
+                            send_json(sock, {"message_type": "BYE"})
+                            sock.close()
+                            connected.clear()
+                        else:
+                            send_json(sock, {"message_type": "ANSWER", "answer": answer})
             except queue.Empty:
                 pass
 
