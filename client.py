@@ -62,7 +62,7 @@ def main():
                         answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
-                            #result_message_received.wait(timeout=message["time_limit"])  # wait for leaderboard
+                            result_message_received.wait(timeout=message["time_limit"])  # wait for leaderboard
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
                             sys.exit(0)
