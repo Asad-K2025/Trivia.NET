@@ -10,7 +10,7 @@ import requests
 
 connected = threading.Event()
 should_exit = threading.Event()
-result_message_received = threading.Event()
+leaderboard_message_received = threading.Event()
 
 question_queue = queue.Queue()
 
@@ -62,6 +62,8 @@ def main():
                         answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
+                            while not leaderboard_message_received.is_set():  # wait till leaderboard arrives for exit
+                                pass
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
                             sys.exit(0)
@@ -178,10 +180,10 @@ def handle_message(sock, message, config):
                 send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
-        result_message_received.set()
         print(message["feedback"])
 
     elif message_type == "LEADERBOARD":
+        leaderboard_message_received.set()
         print(message["state"])
 
     elif message_type == "FINISHED":
