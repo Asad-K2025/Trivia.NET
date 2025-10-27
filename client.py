@@ -2,7 +2,6 @@ import json
 import sys
 import socket
 import threading
-import time
 from pathlib import Path
 import queue
 import signal
@@ -103,7 +102,7 @@ def load_config():
 
 
 def input_handler_with_timeouts(time_limit):
-    def timeout_handler(signum, frame):
+    def timeout_handler(_, _2):
         raise TimeoutError
 
     signal.signal(signal.SIGALRM, timeout_handler)
@@ -152,7 +151,6 @@ def handle_message(sock, message, config):
         print(message["trivia_question"])
         mode = config["client_mode"]
         short_question = message["short_question"]
-        time_limit = message["time_limit"]
 
         if mode == "you":
             question_queue.put(message)
@@ -183,7 +181,7 @@ def handle_message(sock, message, config):
 
 
 def ask_ollama(ollama_config, short_question, time_limit):
-    def timeout_handler(signum, frame):
+    def timeout_handler(_1, _2):
         raise TimeoutError
 
     signal.signal(signal.SIGALRM, timeout_handler)

@@ -1,11 +1,9 @@
 import json
-import signal
 import socket
 import sys
 import time
 import threading
 from pathlib import Path
-import random
 
 import questions
 
@@ -42,7 +40,7 @@ def main():
                     all_players_connected = True
 
             if all_players_connected:
-                time.sleep(1)  # wait a bit and check
+                time.sleep(3)  # wait a bit and check
                 with players_threading_lock:
                     for player in players:
                         try:
@@ -155,7 +153,7 @@ def generate_short_question(qtype):
         return
 
 
-def collect_player_responses(short_q, config, time_limit):
+def collect_player_responses(_, _2, time_limit):
     answers = {}
     deadline = time.time() + time_limit
 
