@@ -58,8 +58,9 @@ def main():
                 message = question_queue.get(timeout=0.1)
                 if message["message_type"] == "QUESTION":
                     if client_mode == "ai":
-                        ai_generated_answer = ask_ollama(config["ollama_config"], message["short_question"], message["time_limit"])
-                    answer = input_handler_with_timeouts(message["time_limit"])  # enable user input for each question
+                        answer = ask_ollama(config["ollama_config"], message["short_question"], message["time_limit"])
+                    else:
+                        answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
                         if answer == "EXIT":
                             send_json(sock, {"message_type": "BYE"})
@@ -70,10 +71,7 @@ def main():
                             sock.close()
                             connected.clear()
                         else:
-                            if client_mode == "ai":
-                                send_json(sock, {"message_type": "ANSWER", "answer": ai_generated_answer})
-                            else:
-                                send_json(sock, {"message_type": "ANSWER", "answer": answer})
+                            send_json(sock, {"message_type": "ANSWER", "answer": answer})
             except queue.Empty:
                 pass
 
