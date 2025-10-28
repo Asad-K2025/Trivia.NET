@@ -2,6 +2,7 @@ import json
 import sys
 import socket
 import threading
+import time
 from pathlib import Path
 import queue
 import signal
@@ -46,6 +47,8 @@ def main():
             connected.clear()
         elif users_command == "EXIT" or should_exit.is_set():
             try:
+                while not result_message_received.is_set():
+                    time.sleep(1)
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
             except:
