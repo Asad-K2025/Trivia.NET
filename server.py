@@ -132,9 +132,9 @@ def start_game(config):
 
         player_responses = collect_player_responses(short_question, config, time_limit)
 
-        time.sleep(0.1)  # a bit more time to receive responses
+        time.sleep(time_limit/100)  # a bit more time to receive responses
         send_results(player_responses, short_question, question_type, config)
-        time.sleep(0.1)
+        time.sleep(time_limit/100)
 
         if i < len(question_types) - 1:  # Dont send leaderboard on final question
             send_leaderboard(config)
