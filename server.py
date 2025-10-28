@@ -134,7 +134,7 @@ def start_game(config):
 
         time.sleep(0.2)  # a bit more time to receive responses
         send_results(player_responses, short_question, question_type, config)
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         if i < len(question_types) - 1:  # Don't send leaderboard on final question
             # time.sleep(0.5)  # wait before sending leaderboard
@@ -160,7 +160,7 @@ def generate_short_question(qtype):
 
 def collect_player_responses(_, _2, time_limit):
     answers = {}
-    deadline = time.time() + time_limit + 0.5
+    deadline = time.time() + time_limit + 0.7
 
     while time.time() < deadline:
         with players_threading_lock:
