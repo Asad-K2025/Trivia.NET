@@ -47,8 +47,6 @@ def main():
             connected.clear()
         elif users_command == "EXIT" or should_exit.is_set():
             try:
-                if not result_message_received.is_set():
-                    time.sleep(0.1)  # wait a bit before sending bye to avoid disconnecting too early
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
             except:
