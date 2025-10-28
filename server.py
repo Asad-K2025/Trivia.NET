@@ -131,12 +131,14 @@ def start_game(config):
         send_json_all_players(question_message)
 
         player_responses = collect_player_responses(short_question, config, time_limit)
+
+        time.sleep(0.2)  # a bit more time to receive responses
         send_results(player_responses, short_question, question_type, config)
 
         if i < len(question_types) - 1:  # Don't send leaderboard on final question
             # time.sleep(0.5)  # wait before sending leaderboard
             send_leaderboard(config)
-            time.sleep(0.5)  # wait after sending leaderboard
+            time.sleep(0.2)  # wait after sending leaderboard
 
     send_finished(config)
 
