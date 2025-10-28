@@ -295,32 +295,31 @@ def send_results(player_responses, short_question, question_type, config):
 
 
 def send_leaderboard(config):
-    with players_threading_lock:
-        sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))
-        state_lines = []
+    sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))
+    state_lines = []
 
-        rank = 1
-        prev_score = None
-        same_score_count = 0
+    rank = 1
+    prev_score = None
+    same_score_count = 0
 
-        for i, player in enumerate(sorted_players):
-            score = player["score"]
-            noun = config["points_noun_singular"] if score == 1 else config["points_noun_plural"]
+    for i, player in enumerate(sorted_players):
+        score = player["score"]
+        noun = config["points_noun_singular"] if score == 1 else config["points_noun_plural"]
 
-            # if new score different, increase num of tied plyaers
-            if prev_score is not None and score != prev_score:
-                rank += same_score_count
-                same_score_count = 0
+        # if new score different, increase num of tied plyaers
+        if prev_score is not None and score != prev_score:
+            rank += same_score_count
+            same_score_count = 0
 
-            same_score_count += 1
-            prev_score = score
+        same_score_count += 1
+        prev_score = score
 
-            state_lines.append(f"{rank}. {player['username']}: {score} {noun}")
+        state_lines.append(f"{rank}. {player['username']}: {score} {noun}")
 
-        send_json_all_players({
-            "message_type": "LEADERBOARD",
-            "state": "\n".join(state_lines)
-        })
+    send_json_all_players({
+        "message_type": "LEADERBOARD",
+        "state": "\n".join(state_lines)
+    })
 
 
 def send_finished(config):
