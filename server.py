@@ -130,6 +130,8 @@ def start_game(config):
 
         send_json_all_players(question_message)
 
+        time.sleep(config["question_interval_seconds"])  # give all player time to answer
+
         player_responses = collect_player_responses(short_question, config, time_limit)
         send_results(player_responses, short_question, question_type, config)
 
