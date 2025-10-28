@@ -4,11 +4,10 @@ import sys
 import time
 import threading
 from pathlib import Path
-
 import questions
 
 players = []
-players_threading_lock = threading.Lock()
+players_threading_lock = threading.Lock()  # prevents players form accessing variables simultaneously in leaderboard
 
 
 def main():
@@ -17,7 +16,7 @@ def main():
     max_players = config["players"]
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # allow server reuse even after os time_wait
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # allows immediate server reuse (os has a wait time)
         try:
             sock.bind(("0.0.0.0", port))
         except Exception:
@@ -25,7 +24,7 @@ def main():
             sys.exit(1)
 
         sock.listen()
-        all_players_connected = False
+        all_players_connected = False  # Flag checks when all players connected
 
         while True:
             connection, address = sock.accept()
