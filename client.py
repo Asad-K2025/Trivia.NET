@@ -213,11 +213,12 @@ def ask_ollama(ollama_config, short_question, time_limit):
         signal.setitimer(signal.ITIMER_REAL, 0)
 
 
-def evaluate_answer(question_type, short_question):
+def evaluate_answer(question_type, short_question, player_response):
+    # Auto modes question solving logic
     if question_type == "Mathematics":
         try:
             question_tokens = short_question.split()
-            total = int(question_tokens[0])
+            total = int(question_tokens[0])  # fist number in equation
             i = 1
             while i < len(question_tokens):
                 operation = question_tokens[i]
@@ -253,36 +254,32 @@ def evaluate_answer(question_type, short_question):
             correct = ""
 
     elif question_type == "Usable IP Addresses of a Subnet":
-        correct = solve_usable_addresses(short_question)
+        try:
+            ip, prefix = short_question.split("/")
+            prefix = int(prefix)
+
+            total = 2 ** (32 - prefix)
+
+            usable_ip_address = total - 2 if prefix < 31 else total  # handles special cases
+
+            correct = str(usable_ip_address)
+        except:
+            correct = ""
 
     elif question_type == "Network and Broadcast Address of a Subnet":
-        correct = solve_network_broadcast(short_question)
+        correct = solve_network_broadcast(short_question)  # complex logic handled by helper function
 
     else:
         correct = ""
 
-    return correct
+    return correct, player_response == correct
 
 
-def solve_usable_addresses(short_q: str) -> str:
+def solve_network_broadcast(short_question):
+    # helper for evaluate answer for some complex logic
     try:
-        ip, prefix = short_q.split("/")
+        ip_str, prefix = short_question.split("/")
         prefix = int(prefix)
-        if prefix < 0 or prefix > 32:
-            return ""
-        total = 2 ** (32 - prefix)
-        usable = total - 2 if prefix < 31 else total
-        return str(usable)
-    except:
-        return ""
-
-
-def solve_network_broadcast(short_q: str) -> str:
-    try:
-        ip_str, prefix = short_q.split("/")
-        prefix = int(prefix)
-        if prefix < 0 or prefix > 32:
-            return ""
 
         # Convert IP to integer
         ip_parts = list(map(int, ip_str.split(".")))
@@ -292,16 +289,17 @@ def solve_network_broadcast(short_q: str) -> str:
         mask = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF
 
         # Calculate network and broadcast
-        net_int = ip_int & mask
+        network_int = ip_int & mask
         broadcast_int = ip_int | (~mask & 0xFFFFFFFF)
 
-        # Convert back to dotted format
-        def int_to_ip(n):
-            return f"{(n >> 24) & 0xFF}.{(n >> 16) & 0xFF}.{(n >> 8) & 0xFF}.{n & 0xFF}"
+        def int_to_ip(number):
+            # Convert back to dotted format in helper
+            return f"{(number >> 24) & 0xFF}.{(number >> 16) & 0xFF}.{(number >> 8) & 0xFF}.{number & 0xFF}"
 
-        return f"{int_to_ip(net_int)} and {int_to_ip(broadcast_int)}"
+        return f"{int_to_ip(network_int)} and {int_to_ip(broadcast_int)}"
     except:
         return ""
+
 
 
 if __name__ == "__main__":
