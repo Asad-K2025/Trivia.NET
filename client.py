@@ -100,6 +100,7 @@ def load_config():
 
 
 def input_handler_with_timeouts(time_limit):
+    # Signal used to break out of an input after timeout
     def timeout_handler(signum, frame):
         raise TimeoutError
 
@@ -121,6 +122,7 @@ def send_json(sock, message):
 
 
 def receive_loop(sock, config):
+    # receives messages form server to then send to handle_message for prcoessing
     while True:
         if not connected.is_set():  # exit on disconnecting with client
             break
@@ -139,6 +141,7 @@ def receive_loop(sock, config):
 
 
 def handle_message(sock, message, config):
+    # Determine what to do based on what message is received form server
     global connected
     message_type = message.get("message_type")
 
@@ -155,7 +158,7 @@ def handle_message(sock, message, config):
             answer = None
         elif mode == "auto":
             question_queue.put(message)
-            answer = evaluate_answer(message["question_type"], short_question)
+            answer = None# evaluate_answer(message["question_type"], short_question)
         elif mode == "ai":
             question_queue.put(message)
             answer = None
