@@ -8,7 +8,6 @@ import signal
 import requests
 
 connected = threading.Event()
-
 question_queue = queue.Queue()
 
 
@@ -30,7 +29,7 @@ def main():
                 host, port = address.split(":")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((host, int(port)))
-                users_command = ""  # reset to avoid a connect loop
+                users_command = ""  # reset to avoid looping through connect condition
                 send_json(sock, {"message_type": "HI", "username": config["username"]})
                 connected.set()
                 threading.Thread(target=receive_loop, args=(sock, config), daemon=True).start()
@@ -49,25 +48,26 @@ def main():
             except:
                 pass
             sys.exit(0)
-        else:
-            try:  # used if client answered a question
+        else:  # checks if client answered a question
+            try:
                 client_mode = config["client_mode"]
-                message = question_queue.get(timeout=0.1)
+                message = question_queue.get(timeout=0.1)  # question queue
+
                 if message["message_type"] == "QUESTION":
                     if client_mode == "ai":
                         answer = ask_ollama(config["ollama_config"], message["short_question"], message["time_limit"])
                     else:
                         answer = input_handler_with_timeouts(message["time_limit"])
                     if answer is not None:
-                        if answer == "EXIT":
+                        if answer == "EXIT" or sys.stdin == "EXIT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
                             sys.exit(0)
-                        elif answer == "DISCONNECT":
+                        elif answer == "DISCONNECT" or sys.stdin == "DISCONNECT":
                             send_json(sock, {"message_type": "BYE"})
                             sock.close()
                             connected.clear()
-                        else:
+                        else:  # no keywords provided, so normal answer to a question
                             send_json(sock, {"message_type": "ANSWER", "answer": answer})
             except queue.Empty:
                 pass
