@@ -2,15 +2,12 @@ import json
 import sys
 import socket
 import threading
-import time
 from pathlib import Path
 import queue
 import signal
 import requests
 
 connected = threading.Event()
-should_exit = threading.Event()
-result_message_received = threading.Event()
 
 question_queue = queue.Queue()
 
@@ -45,7 +42,7 @@ def main():
                 sock.close()
             sock = None
             connected.clear()
-        elif users_command == "EXIT" or should_exit.is_set():
+        elif users_command == "EXIT":
             try:
                 send_json(sock, {"message_type": "BYE"})
                 sock.close()
@@ -169,9 +166,7 @@ def handle_message(sock, message, config):
             send_json(sock, {"message_type": "ANSWER", "answer": answer})
 
     elif message_type == "RESULT":
-        result_message_received.set()
         print(message["feedback"])
-        result_message_received.clear()  # clear for next question in case quiz does not exit
 
     elif message_type == "LEADERBOARD":
         print(message["state"])
