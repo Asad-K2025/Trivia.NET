@@ -174,7 +174,7 @@ def handle_message(sock, message, config):
 
 
 def ask_ollama(ollama_config, short_question, time_limit):
-    # meant to use signal to timeout response. Note: does not break out properly, annoying bug
+    # Meant to use signal to timeout response. Note: does not break out properly, annoying bug
     def timeout_handler(signum, frame):
         raise TimeoutError
 
