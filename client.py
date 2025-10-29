@@ -158,7 +158,7 @@ def handle_message(sock, message, config):
             answer = None
         elif mode == "auto":
             question_queue.put(message)
-            answer = None# evaluate_answer(message["question_type"], short_question)
+            answer = evaluate_answer(message["question_type"], short_question)
         elif mode == "ai":
             question_queue.put(message)
             answer = None
