@@ -209,10 +209,11 @@ def ask_ollama(ollama_config, short_question, time_limit):
 
 
 def evaluate_answer(question_type, short_question):
+    # Auto modes question solving logic
     if question_type == "Mathematics":
         try:
             question_tokens = short_question.split()
-            total = int(question_tokens[0])
+            total = int(question_tokens[0])  # first number in equation
             i = 1
             while i < len(question_tokens):
                 operation = question_tokens[i]
@@ -248,7 +249,16 @@ def evaluate_answer(question_type, short_question):
             correct = ""
 
     elif question_type == "Usable IP Addresses of a Subnet":
-        correct = solve_usable_addresses(short_question)
+        try:
+            ip, prefix = short_question.split("/")
+            prefix = int(prefix)
+            if prefix < 0 or prefix > 32:
+                return ""
+            total = 2 ** (32 - prefix)
+            usable = total - 2 if prefix < 31 else total  # handle special cases
+            correct = str(usable)
+        except:
+            correct = ""
 
     elif question_type == "Network and Broadcast Address of a Subnet":
         correct = solve_network_broadcast(short_question)
@@ -259,22 +269,9 @@ def evaluate_answer(question_type, short_question):
     return correct
 
 
-def solve_usable_addresses(short_q: str) -> str:
+def solve_network_broadcast(short_question):
     try:
-        ip, prefix = short_q.split("/")
-        prefix = int(prefix)
-        if prefix < 0 or prefix > 32:
-            return ""
-        total = 2 ** (32 - prefix)
-        usable = total - 2 if prefix < 31 else total
-        return str(usable)
-    except:
-        return ""
-
-
-def solve_network_broadcast(short_q: str) -> str:
-    try:
-        ip_str, prefix = short_q.split("/")
+        ip_str, prefix = short_question.split("/")
         prefix = int(prefix)
         if prefix < 0 or prefix > 32:
             return ""
