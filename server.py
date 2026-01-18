@@ -140,7 +140,7 @@ def main_game_handler(config):
 
         if i < len(question_types) - 1:  # Don't send leaderboard on final question
             send_leaderboard(config)
-            time.sleep(time_limit / 5)  # allows time for leaderboard calculatons and sending
+            time.sleep(time_limit / 5)  # allows time for leaderboard calculations and sending
 
     send_finished(config)
 
@@ -180,7 +180,7 @@ def collect_player_responses(_, _2, time_limit):
                 except Exception:
                     continue
 
-        if len(answers) == len(players):  # enough repsonses received
+        if len(answers) == len(players):  # enough responses received
             break
 
     return answers
@@ -275,7 +275,7 @@ def solve_network_broadcast(short_question):
 
 
 def send_results(player_responses, short_question, question_type, config):
-    # sends results of users responses to questiosn
+    # sends results of users responses to question
     for player in players:
         username = player["username"]
         connection = player["connection"]
@@ -299,7 +299,7 @@ def send_results(player_responses, short_question, question_type, config):
 
 
 def send_leaderboard(config):
-    sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))  # sort by score and lexographically
+    sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))  # sort by score and lexicographically
     state_lines = []
 
     rank = 1
@@ -315,7 +315,7 @@ def send_leaderboard(config):
             rank += same_score_count
             same_score_count = 0
 
-        # next player score same, therefore must be tie
+        # next player score same, therefore must be a tie
         same_score_count += 1
         prev_score = score
 
@@ -329,7 +329,7 @@ def send_leaderboard(config):
 
 def send_finished(config):
     with players_threading_lock:
-        sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))  # sort lexographcially and by rank
+        sorted_players = sorted(players, key=lambda p: (-p["score"], p["username"]))  # sort lexicographically and by rank
         top_score = sorted_players[0]["score"]
         winners = [p["username"] for p in sorted_players if p["score"] == top_score]
 

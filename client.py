@@ -122,7 +122,7 @@ def send_json(sock, message):
 
 
 def receive_loop(sock, config):
-    # receives messages form server to then send to handle_message for prcoessing
+    # receives messages form server to then send to handle_message for processing
     while True:
         if not connected.is_set():  # exit on disconnecting with client
             break
