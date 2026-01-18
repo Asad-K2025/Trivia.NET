@@ -1,5 +1,5 @@
 {
-  "username": "Player3",
+  "username": "AI Player",
   "client_mode": "ai",
  "ollama_config": {
  "ollama_host": "localhost",
