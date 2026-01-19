@@ -4,8 +4,6 @@
 
 This project demonstrates advanced skills in **network programming**, **asynchronous I/O**, **protocol design**, and **AI integration**.
 
----
-
 ## Features
 
 ### Trivia Gameplay
@@ -40,8 +38,6 @@ Trivia.NET supports **three answering modes**:
 - Roman numeral conversion
 - Subnet usable IP address calculation
 - Network and broadcast address determination
-
----
 
 ## Running the Project
 
@@ -113,8 +109,6 @@ ollama serve
 ```
 
 The client will automatically send trivia questions to the LLM and forward the raw response to the server.
-
----
 
 ## Testing Instructions
 
