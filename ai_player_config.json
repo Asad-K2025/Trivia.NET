@@ -3,7 +3,7 @@
   "client_mode": "ai",
  "ollama_config": {
  "ollama_host": "localhost",
- "ollama_port": 8888,
+ "ollama_port": 8000,
  "ollama_model": "llama3"
  } 
 }
