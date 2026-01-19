@@ -118,7 +118,7 @@ The test cases for this project can be called using:
 python tests/run_all_tests.py
 ```
 
-```client.py``` and ```server.py``` have been tested extensively to ensure that they pass the custom testcases. However, the testcase will not automatically work ```test_ask_ollama_returns_message```, and requires the command:
+```client.py``` and ```server.py``` have been tested extensively to ensure that they pass the custom testcases. However, the testcase ```test_ask_ollama_returns_message``` will not automatically work, and requires the command:
 
  ```bash
  python ollama.py
