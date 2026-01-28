@@ -1,3 +1,5 @@
+# This file was created by a staff member for INFO1112 at the University of Sydney, and is not the work of the repository owner.
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
